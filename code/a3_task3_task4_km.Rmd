@@ -1,0 +1,39 @@
+---
+title: "a3_task3_katheryn_moya"
+author: "Katheryn Moya"
+date: "10/26/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(here)
+library(tidyverse)
+library(janitor)
+```
+
+```{r}
+urchins <- read_csv(here("data", "urchins.csv"))
+
+#clean up names to lower case
+urchins_clean <- clean_names(urchins)
+```
+## Data vistualization
+
+```{r}
+ggplot(data = urchins_clean, aes(x = size)) +
+  geom_histogram(bins = 10) +
+  facet_wrap(~common_name) +
+  aes(fill = common_name) +
+  labs(x = "Size (cm)",
+       title = "Size distrubution of purple and red urchins along Santa Barbara Coast") +
+  scale_fill_manual(values = c("purple", "red"))
+
+```
+```{r}
+
+```
+
+
+
