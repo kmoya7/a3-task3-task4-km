@@ -4,6 +4,7 @@ author: "Katheryn Moya"
 date: "10/26/2021"
 output: html_document
 ---
+# Data: Reed, D. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative. https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b. 
 
 ```{r setup, include=FALSE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -11,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(here)
 library(tidyverse)
 library(janitor)
+library(lubridate)
 ```
 
 ```{r}
@@ -19,6 +21,7 @@ urchins <- read_csv(here("data", "urchins.csv"))
 #clean up names to lower case
 urchins_clean <- clean_names(urchins)
 ```
+## Section 1. Size comparisons, purple and red urchins
 ## Data vistualization
 
 ```{r}
@@ -30,10 +33,69 @@ ggplot(data = urchins_clean, aes(x = size)) +
        title = "Size distrubution of purple and red urchins along Santa Barbara Coast") +
   scale_fill_manual(values = c("purple", "red"))
 
+# still need to add figure caption!
 ```
+
+
 ```{r}
+# make a summary table
+urchins_stats <- urchins_clean %>% 
+  group_by(common_name) %>% 
+  summarize(mean_size = mean(size),
+            sd_size = sd(size),
+            median_size = median(size),
+            sample_size = n())
+
+#Add a table caption above your table. Some things to consider:
+#Are the values a reasonable number of significant figures?
+#Have you updated column names to be finalized (with units?)
+
+```
+### Below where your graph and table appear, add 2 - 3 sentences briefly describing your overall takeaways about how the size (distribution, central tendency, spread, etc.) compare between the two species of urchins (again, here we are ignoring site and treatment as a variable). Help to contextualize any differences you observe - for example, what is the actual and % difference in mean urchin diameter between the species? 
+
+## Section 2. Explore purple urchin counts by site and year
+
+```{r}
+#create subset for purple urchins
+
+purple_urchins <- urchins_clean %>% 
+  filter(common_name == "Purple Urchin") %>% 
+  mutate(date = myd(date)) %>% 
+  mutate(year = year(date)) %>% 
+  mutate(site_full = case_when(
+    site %in% c("NAPL") ~ "Naples Reef",
+    site %in% c("AQUE") ~ "Arroyo Quemado Reef",
+    site %in% c("MOHK") ~ "Mohawk Reef",
+    site %in% c("IVEE") ~ "Isla Vista Reef",
+    site %in% c("CARP") ~ "Carpinteria Reef"))
+```
+
+# Write code to store a table containing the total number of purple urchins observed by site and year
+
+```{r}
+purple_urchins %>% 
+  group_by(site_full) %>% 
+  summarize(sum_site = n())
+
+purple_urchins_full <- purple_urchins %>% 
+  group_by(site_full, year) %>% 
+  summarize(sum_site = n())
+  
+```
+
+```{r}
+ggplot(data = purple_urchins_full,
+       aes(x = year, y = sum_site)) +
+  geom_line(aes(color = site_full)) +
+  facet_wrap(~site_full, 
+             scales = "free") +
+  labs(title = "Purple urchin population distribution by site",
+       x = "Year",
+       y = "Amount of urchins")
 
 ```
 
+## Add text below your graph: do you think this graph reflects changes in the purple urchin population? What would you have to take into account to determine whether the changes in counts by year are reflective of actual changes in urchin population? What else could explain the changes in number of purple urchins observed? 
 
+## End task 3
 
