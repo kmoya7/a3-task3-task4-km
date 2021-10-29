@@ -60,7 +60,7 @@ urchins_stats <- urchins_clean %>%
 
 purple_urchins <- urchins_clean %>% 
   filter(common_name == "Purple Urchin") %>% 
-  mutate(date = myd(date)) %>% 
+  mutate(date = mdy(date)) %>% 
   mutate(year = year(date)) %>% 
   mutate(site_full = case_when(
     site %in% c("NAPL") ~ "Naples Reef",
@@ -87,8 +87,7 @@ purple_urchins_full <- purple_urchins %>%
 ggplot(data = purple_urchins_full,
        aes(x = year, y = sum_site)) +
   geom_line(aes(color = site_full)) +
-  facet_wrap(~site_full, 
-             scales = "free") +
+  scale_x_continuous(breaks = 2008:2020) +
   labs(title = "Purple urchin population distribution by site",
        x = "Year",
        y = "Amount of urchins")
