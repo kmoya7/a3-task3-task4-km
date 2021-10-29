@@ -1,0 +1,120 @@
+---
+title: "Purple and Red Urchin Diameter Size Distribution"
+author: "Katheryn Moya"
+date: "10/26/2021"
+output: html_document
+---
+# Overview
+
+In this report, I will be wrangling, visualizing, and analyzing data of the size distribution of red and purple urchin diameters (in centimeters) recorded by the Santa Barbara Coastal Long Term Ecological Research program divers, as well as the population distribution of purple urchins by site since 2008.  
+
+**Data Citation:** Reed, D. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative. https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b. 
+
+# Setup
+```{r setup, include=TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(here)
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(kableExtra)
+```
+
+# Read in the Data
+
+```{r}
+urchins <- read_csv(here("data", "urchins.csv"))
+
+#clean up names to lower case
+urchins_clean <- clean_names(urchins)
+```
+## Section 1. Size comparisons, purple and red urchins
+
+### Data vistualization
+```{r, fig.cap = "**Figure 1.** Size distribution of purple and red urchin diameters (in centimeters) along the Santa Barbara Coast"}
+ggplot(data = urchins_clean, aes(x = size)) +
+  geom_histogram(bins = 10) +
+  facet_wrap(~common_name) +
+  aes(fill = common_name) +
+  labs(x = "Size (cm)",
+       y = "Count",
+       title = "Size distrubution of purple and red urchins along Santa Barbara Coast",
+       fill = "Common Name") +
+  scale_fill_manual(values = c("purple", "red"))
+```
+
+### Summary Table
+
+```{r}
+urchins_stats <- urchins_clean %>% 
+  group_by(common_name) %>% 
+  summarize(mean_size = round(mean(size), digits = 2),
+            sd_size = round(sd(size), digits = 2),
+            median_size = round(median(size), digits = 2),
+            sample_size = n())
+
+urchins_stats %>%
+  kbl(caption = "**Table 1.** Size Distribution Between Purple and Red Urchin Diameters along Santa Barbara Coast",
+      col.names = c("Common Name",
+                    "Mean Size (cm)",
+                    "Standard Deviation Size (cm)",
+                    "Median Size (cm)",
+                    "Sample Size (n)")) %>%
+ kable_paper("hover", full_width = F)
+
+```
+Purple urchins appear to have a higher distribution of smaller urchin diameters than red urchins, which can be seen by the mean size of 4.47cm. Yet red urchin diameters are more evenly distributed across sizes, with its mean and median being relatively close at 6.78 cm and 7.0 cm, respectively. Whereas the actual difference in mean urchin diameter between species is 2.31 cm, the % difference in mean urchin diameter is actually about 20.5%, demonstrating that relative to their sample size, the distributions are not as different as they may appear just by obeservation of the graph. 
+
+## Section 2. Explore purple urchin counts by site and year
+
+### Data wrangling
+
+```{r}
+# Create subset for purple urchins:
+
+purple_urchins <- urchins_clean %>% 
+  filter(common_name == "Purple Urchin") %>% 
+  mutate(date = mdy(date)) %>% 
+  mutate(year = year(date)) %>% 
+ # Create new column that contains the full name of each of the five sites:
+   mutate(site_full = case_when(
+    site %in% c("NAPL") ~ "Naples Reef",
+    site %in% c("AQUE") ~ "Arroyo Quemado Reef",
+    site %in% c("MOHK") ~ "Mohawk Reef",
+    site %in% c("IVEE") ~ "Isla Vista Reef",
+    site %in% c("CARP") ~ "Carpinteria Reef"))
+```
+
+
+```{r}
+# Store a table containing the total number of purple urchins observed by site and year
+
+purple_urchins %>% 
+  group_by(site_full) %>% 
+  summarize(sum_site = n())
+
+purple_urchins_full <- purple_urchins %>% 
+  group_by(site_full, year) %>% 
+  summarize(sum_site = n())
+  
+```
+### Data Visualization
+
+```{r, fig.cap = "**Figure 2.** Population distribution of Purple urchins among 5 different sites in the Santa Barbara Coast since 2008"}
+
+ggplot(data = purple_urchins_full,
+       aes(x = year, y = sum_site)) +
+  geom_line(aes(color = site_full)) +
+  scale_x_continuous(breaks = 2008:2020) +
+  labs(title = "Purple urchin population distribution by site",
+       x = "Year",
+       y = "Amount of urchins",
+       color = "Site")
+```
+
+
+I think this graph does a basic job of reflecting changes in the purple urchin population over the years, but it is necessary to take into account the different treatments of the populations - whether or not the giant kelp was left intact or removed once each winter - over time to determine how that variable impacts the changes in counts by year in the actual urchin population. Changing water temperatures could also play a role in the number of purple urchins observed, and that may be an important variable to consider in this study.
+
+## End task
+
