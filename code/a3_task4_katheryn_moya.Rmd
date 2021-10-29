@@ -1,0 +1,60 @@
+---
+title: "a3_task4_katheryn_moya"
+author: "Katheryn Moya"
+date: "10/28/2021"
+output: html_document
+---
+# Overview
+Data: Reed, D. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative. https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b. 
+
+```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(here)
+library(tidyverse)
+library(janitor)
+library(lubridate)
+```
+
+```{r}
+# Read in data
+urchins <- read_csv(here("data", "urchins.csv"))
+
+#clean up data to lowercase
+
+urchins_clean <- clean_names(urchins)
+```
+
+```{r}
+# compare the mean size of purple urchins in CONTROL (no giant kelp removal) or ANNUAL (annual kelp removal) sections of Naples Reef in 2010
+
+purple_urchins_mean <-  urchins_clean %>% #starting from data frame then
+  mutate(date = mdy(date)) %>% 
+  mutate(year = year(date)) %>% 
+  filter(common_name == "Purple Urchin") %>% 
+  filter(site == "NAPL") %>% 
+  filter(year == "2010") %>% 
+  group_by(treatment) %>%  
+  summarize(mean_size = mean(size))
+  
+```
+
+```{r}
+purple_urchins_napl_2010 <- urchins_clean %>% 
+ # convert date to "date" class with lubridate, use `year()` to add a new column for year
+   mutate(date = mdy(date)) %>% 
+   mutate(year = year(date)) %>% 
+   #filter for purple urchins, Naples Reef, and 2010
+   filter(site == "NAPL",
+         year == "2010",
+         common_name == "Purple urchin")
+# make a new dataset to compare mean sizes between different treatment types
+  purple_urchin_stats <- purple_urchins_napl_2010 %>%
+    group_by(treatment) %>% 
+    summarize(mean_size = round(mean(size) , digits = 2),
+              median_size = round(median(size) , digits = 2),
+              sd_size = round(sd(size) , digits = 2),
+              sample_size = n())
+  
+```
+
+
