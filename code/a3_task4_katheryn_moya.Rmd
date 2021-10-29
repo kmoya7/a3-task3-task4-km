@@ -1,29 +1,34 @@
 ---
-title: "a3_task4_katheryn_moya"
+title: "Purple Urchin Size Distribution at Naples Reef in 2010"
 author: "Katheryn Moya"
 date: "10/28/2021"
 output: html_document
 ---
 # Overview
-Data: Reed, D. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative. https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b. 
 
-```{r setup, include=FALSE, message = FALSE, warning = FALSE}
+In this report, I will be wrangling, visualizing, and analyzing data of the size distribution of purple urchin diameters (in centimeters) by kelp treatment recorded by the Santa Barbara Coastal Long Term Ecological Research program divers. 
+
+**Data Citation:** Reed, D. 2020. SBC LTER: Reef: Long-term experiment: Kelp removal: Urchin size frequency distribution ver 20. Environmental Data Initiative. https://doi.org/10.6073/pasta/5a1e9ef03aa47bd2225c0bb98a02a63b. 
+
+# Setup
+```{r setup, include= TRUE, message = FALSE, warning = FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(here)
 library(tidyverse)
 library(janitor)
 library(lubridate)
+library(kableExtra)
 ```
 
-```{r}
-# Read in data
+# Read in the data
+```{r, message = FALSE, warning = FALSE}
 urchins <- read_csv(here("data", "urchins.csv"))
 
-#clean up data to lowercase
+# clean up data to lowercase
 
 urchins_clean <- clean_names(urchins)
 ```
-
+# Data Wrangling
 ```{r}
 # compare the mean size of purple urchins in CONTROL (no giant kelp removal) or ANNUAL (annual kelp removal) sections of Naples Reef in 2010
 
@@ -46,15 +51,60 @@ purple_urchins_napl_2010 <- urchins_clean %>%
    #filter for purple urchins, Naples Reef, and 2010
    filter(site == "NAPL",
          year == "2010",
-         common_name == "Purple urchin")
+         common_name == "Purple Urchin")
+
 # make a new dataset to compare mean sizes between different treatment types
-  purple_urchin_stats <- purple_urchins_napl_2010 %>%
+purple_urchins_stats <- purple_urchins_napl_2010 %>%
     group_by(treatment) %>% 
     summarize(mean_size = round(mean(size) , digits = 2),
               median_size = round(median(size) , digits = 2),
               sd_size = round(sd(size) , digits = 2),
               sample_size = n())
-  
+```
+
+## Data Vistualization
+
+```{r}
+# Create exploratory faceted histograms and QQ-plots for size distribution of purple urchins at Naples in 2010, separated by treatment
+
+ggplot(data = purple_urchins_napl_2010, aes(x = size)) +
+  geom_histogram(bins = 10) +
+  facet_wrap(~ treatment) +
+  aes(fill = treatment) +
+  labs(x = "Size (cm)",
+       title = "Size distrubution of purple urchins at Naples Reef in 2010") +
+  scale_fill_manual(values = c("cadetblue3", "palegreen3"))
+
+
+ggplot(data = purple_urchins_napl_2010, aes(sample = size)) +
+  geom_qq() +
+    facet_wrap(~ treatment)
+
 ```
 
 
+There was a greater distribution of purple urchins with smaller diameters in the areas where giant kelp was removed once each winter and allowed to re-colonize in 2010. On the other hand, there is a more evenly spread out distribution of purple urchins across all diameter sizes in areas where giant kelp was left intact. In both treatments, it apears that the most present diameter size of purple urchins was within 3.6cm and 3.9cm, which can be seen through the similar mean diameter sizes. 
+
+
+## Summary Table
+```{r}
+
+# Using subset with descriptive statistics
+purple_urchins_stats <- purple_urchins_napl_2010 %>%
+    group_by(treatment) %>% 
+    summarize(mean_size = round(mean(size) , digits = 2),
+              median_size = round(median(size) , digits = 2),
+              sd_size = round(sd(size) , digits = 2),
+              sample_size = n())
+
+# Make finalized summary table
+purple_urchins_stats %>%
+  kbl(caption = "**Table 1.** Size Distribution of Purple Urchin Diameters Among Different Kelp Treaments in 2010",
+      col.names = c("Treatment",
+                    "Mean Size (cm)",
+                    "Median Size (cm)",
+                    "Standard Deviation Size (cm)",
+                    "Sample Size (n)")) %>%
+ kable_paper("hover", full_width = F)
+```
+## End Task
